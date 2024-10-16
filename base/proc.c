@@ -17,6 +17,7 @@ static struct proc *initproc;
 int nextpid = 1;
 int sched_trace_enabled = 0; // ZYF: for OS CPU/process project
 int sched_trace_counter = 0; // ZYF: counter for print formatting
+int schedPolicy;
 extern void forkret(void);
 extern void trapret(void);
 
@@ -179,6 +180,9 @@ growproc(int n)
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
+
+// Grab orfms yspro.cc defined by user (0 = parent first, 1 = child first)
+extern int child_first;
 int
 fork(void)
 {
@@ -217,6 +221,11 @@ fork(void)
   acquire(&ptable.lock);
   np->state = RUNNABLE;
   release(&ptable.lock);
+
+  if (child_first == 1)
+    {
+      yield();
+    }
 
   return pid;
 }
