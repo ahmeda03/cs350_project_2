@@ -112,3 +112,12 @@ int sys_enable_sched_trace(void)
 
   return 0;
 }
+
+int sys_tickets_owned(void)
+{
+  int pid;
+  if(argint(0, &pid) < 0)
+    return -1;
+
+  return tickets_owned(pid);
+}

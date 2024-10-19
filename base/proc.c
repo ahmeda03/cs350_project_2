@@ -17,6 +17,7 @@ static struct proc *initproc;
 int nextpid = 1;
 int sched_trace_enabled = 0; // ZYF: for OS CPU/process project
 int sched_trace_counter = 0; // ZYF: counter for print formatting
+int total_tickets = 100; // Total tickets to be split up between all processes
 extern void forkret(void);
 extern void trapret(void);
 
@@ -218,6 +219,23 @@ fork(void)
   np->state = RUNNABLE;
   release(&ptable.lock);
 
+  acquire(&ptable.lock);
+  int active_proc_count = 0;
+  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == RUNNING || p->state == RUNNABLE) {
+      active_proc_count++;
+    }
+  }
+  
+  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == RUNNING || p->state == RUNNABLE) {
+      p->tickets = total_tickets / active_proc_count;
+    } else {
+      p->tickets = 0;
+    }
+  }
+  release(&ptable.lock);
+
   return pid;
 }
 
@@ -263,6 +281,22 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+
+  int active_proc_count = 0;
+  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == RUNNING || p->state == RUNNABLE) {
+      active_proc_count++;
+    }
+  }
+  
+  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == RUNNING || p->state == RUNNABLE) {
+      p->tickets = (total_tickets / active_proc_count);
+    } else {
+      p->tickets = 0;
+    }
+  }
+
   sched();
   panic("zombie exit");
 }
@@ -554,4 +588,22 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+tickets_owned(int pid) {
+  acquire(&ptable.lock);
+
+  int proc_tickets = 0;
+
+  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->pid == pid) {
+      // release(&ptable.lock);
+      // return p->tickets;
+      proc_tickets = p->tickets;
+    }
+  }
+
+  release(&ptable.lock);
+  return proc_tickets;
 }
