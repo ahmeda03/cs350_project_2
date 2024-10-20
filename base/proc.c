@@ -339,8 +339,9 @@ scheduler(void)
 
   for(;;){
     // Enable interrupts on this processor.
-    sti();
-
+    //if round robin
+    if(schedPolicy == 0){
+      sti();
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
         ran = 0;
@@ -349,7 +350,7 @@ scheduler(void)
             continue;
 
           ran = 1;
-      
+
           // Switch to chosen process.  It is the process's job
           // to release ptable.lock and then reacquire it
           // before jumping back to us.
@@ -363,11 +364,49 @@ scheduler(void)
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
-    }
-    release(&ptable.lock);
+      }
+      release(&ptable.lock);
 
-    if (ran == 0){
-        halt();
+      if (ran == 0){
+          halt();
+      }
+    }
+    //if stride scheduling
+    else if(schedPolicy == 1){
+      sti();
+      int lowestPID = 0;
+      int lowestPass = 0;
+      //search for a runnable process
+      acquire(&ptable.lock);
+      ran = 0;
+      //for p = a process in the p table, p is less than the end of the table, p++
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        //skip if p is not runnable
+        if(p->state != RUNNABLE){
+          continue;
+        }
+        //if p is runnable
+        else{
+          //JOB: find the process with either the lowest pass or PID val and run it
+          //     after running, update the pass with the formula pass += stride.
+          //     Then search for the next process with the lowest PID or pass value
+          if(p-> pid == lowestPID || p-> pass == lowestPass){
+            c->proc = p; //current running proc switch
+            switchuvm(p); //switch running proc (context switch)
+            p->state = RUNNING; //set to running
+
+            swtch(&(c->scheduler), p->context); //return to scheduler
+            switchkvm(); //switch proc off
+
+            // Process is done running for now.
+            // It should have changed its  before coming back.
+            p -> pass += stride; // pass should be initialized when proc are initialized
+            c->proc = 0;
+            }
+        }
+        PID++;
+        stride++;
+      }
     }
   }
 }
