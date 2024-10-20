@@ -113,6 +113,34 @@ int sys_enable_sched_trace(void)
   return 0;
 }
 
+int child_first;
+
+int sys_fork_winner(void)
+{
+  if (argint(0, &child_first) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+extern int schedPolicy;
+
+int sys_set_sched(void) {
+  int policyNum;
+  // get arguments from user
+  if (argint(0, &policyNum) < 0) {
+    return -1;
+  }
+  if (policyNum == 0 || policyNum == 1) {
+    // 0 for round robin and 1 for stride
+    schedPolicy = policyNum;
+    cprintf("Scheduling policy is currently %d\n", schedPolicy);
+    return 0;
+  }
+  return -1;
+}
+
 int sys_tickets_owned(void)
 {
   int pid;
