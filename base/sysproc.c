@@ -140,3 +140,12 @@ int sys_set_sched(void) {
   }
   return -1;
 }
+
+int sys_tickets_owned(void)
+{
+  int pid;
+  if(argint(0, &pid) < 0)
+    return -1;
+
+  return tickets_owned(pid);
+}
