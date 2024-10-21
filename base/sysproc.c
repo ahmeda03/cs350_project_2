@@ -152,12 +152,10 @@ int sys_tickets_owned(void)
 
 int sys_transfer_tickets(void)
 {
-  // int pid, tickets;
-  //
-  // argint(0, &pid);
-  // argint(1, &tickets);
-  //
-  // return transfer_tickets(pid, tickets);
-  return 999;
-
+  int pid, tickets;
+  
+  if(argint(0, &pid) < 0 || argint(1, &tickets) < 0)
+    return -1;
+  
+  return transfer_tickets(pid, tickets);
 }
