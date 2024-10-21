@@ -190,6 +190,8 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
+  struct proc *p;
+
 
   // Allocate process.
   if((np = allocproc()) == 0){
@@ -224,31 +226,29 @@ fork(void)
   release(&ptable.lock);
 
   acquire(&ptable.lock);
-  int active_proc_count = 0;
-  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p->state == RUNNING || p->state == RUNNABLE) {
-      active_proc_count++;
+
+	int active_proc_count  = 0;
+  // Count all active processes
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNING || p->state == RUNNABLE)
+        active_proc_count ++;
     }
-  }
-  
-  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p->state == RUNNING || p->state == RUNNABLE) {
-      p->tickets = total_tickets / active_proc_count;
-      //(Thomas): I could not find anything in Ahmed's code that initialized stride and pass values so I decided to put it here
-       // p -> stride = total_tickets*10/(p->tickets);
-       // p -> pass =0;
-    } else {
-      p->tickets = 0;
+
+  // Distribute tickets (and init stride/pass) for all active proc
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state == RUNNING || p->state == RUNNABLE) {
+        p->tickets = (total_tickets/active_proc_count );
+        p->stride = (total_tickets * 10) / p->tickets;
+        p->pass = 0;
+      }
     }
-  }
+    
   release(&ptable.lock);
 
   if (child_first == 1)
-    {
-      yield();
-    }
-
-
+      {
+        yield();
+      }
   return pid;
 }
 
@@ -377,88 +377,92 @@ scheduler(void)
 
   for(;;){
     // Enable interrupts on this processor.
-    //if round robin
-    if(schedPolicy == 0){
-      sti();
-        // Loop over process table looking for process to run.
-        acquire(&ptable.lock);
-        ran = 0;
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-          if(p->state != RUNNABLE)
-            continue;
+    sti();
 
-          ran = 1;
+    // Loop over process table looking for process to run.
+    acquire(&ptable.lock);
 
-          // Switch to chosen process.  It is the process's job
-          // to release ptable.lock and then reacquire it
-          // before jumping back to us.
-          c->proc = p;
-          switchuvm(p);
-          p->state = RUNNING;
+    // Round robin
+    if(schedPolicy == 0) {
+      ran = 0;
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
 
-          swtch(&(c->scheduler), p->context);
-          switchkvm();
+        ran = 1;
 
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
-          c->proc = 0;
-      }
-      release(&ptable.lock);
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
 
-      if (ran == 0){
-          halt();
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
       }
     }
-    //if stride scheduling
-    else if(schedPolicy == 1){
-      int lowestPass =0;
-      int lowestPID =0;
-      sti();
-      //search for a runnable process
-      acquire(&ptable.lock);
+    // Stride scheduler
+    else {
+      int lowestPass =__INT_MAX__;
+      int lowestPID =__INT_MAX__;
       ran = 0;
-      //for p = a process in the p table, p is less than the end of the table, p++
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        //skip if p is not runnable
-        if(p->state != RUNNABLE){
+
+      // find process w/ lowest pass value
+      struct proc *lowest_p;
+
+      // Assign lowest_p to the proc w/ lowest pass
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state != RUNNABLE)
           continue;
+        if(p->pass < lowestPass) {
+          lowestPass = p->pass;
+          lowest_p = p;
         }
-        //if p is runnable
-        else{
-          ran = 1;
-          //JOB: find the process with either the lowest pass or PID val and run it
-          //     after running, update the pass with the formula pass += stride.
-          //     Then search for the next process with the lowest PID or pass value
+      }
 
-          //ISSUE: after the 1st time around, the program hangs.
-          //Theory: it could be that since the for loop only runs once, we run everything once, update, and then move on
-          //        without coming back around
-          //COUNTER: Round robin also uses a for loop and works fine
-          if(p-> pid <= lowestPID || p-> pass <= lowestPass){
-            // c is the cpu
-            // p should be the process
-            p -> pass = p->pass + p-> stride; // pass should be initialized when proc are initialized
-            lowestPass = p->pass;
-            lowestPID = p->pid;
-            c->proc = p; //current running proc switch
-            switchuvm(p); //switch running proc (context switch)
-            p->state = RUNNING; //set to running
-
-            swtch(&(c->scheduler), p->context); //return to scheduler
-            switchkvm(); //switch proc off
-
-            // Process is done running for now.
-            // It should have changed its ???? before coming back.
-            c->proc = 0;
-            }
+      // DOUBLE CHECK to make sure lowest_p is ALSO the lowest PID
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state != RUNNABLE)
+          continue;
+        if(p->pass == lowest_p->pass && p->pid < lowest_p->pid) {
+           // reassign lowest_p
+          lowest_p = p;
         }
-        //increment lowestPID and lowestPass to search for the process with the next lowest PID or pass
       }
-      release(&ptable.lock);
 
-      if (ran == 0){
-          halt();
+      // Schedule proccess w/ lowest AND pid
+      if(lowest_p && lowest_p->state == RUNNABLE) {
+        p = lowest_p;
+
+        // increase its pass value by stride value
+        p->pass = p->pass + p->stride;
+        ran = 1;
+      
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
       }
+    }
+
+    release(&ptable.lock);
+
+    if (ran == 0){
+      halt();
     }
   }
 }
@@ -695,8 +699,8 @@ int transfer_tickets(int pid, int tickets)
       callerproc->tickets -= tickets;
 
       // calc new stride value
-      receivingproc->stride = (100 * 10) / receivingproc->tickets;
-      callerproc->stride = (100 * 10) / callerproc->tickets;
+      receivingproc->stride = (total_tickets * 10) / receivingproc->tickets;
+      callerproc->stride = (total_tickets * 10) / callerproc->tickets;
 
       release(&ptable.lock);
       return callerproc->tickets;
