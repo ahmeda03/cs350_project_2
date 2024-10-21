@@ -234,6 +234,9 @@ fork(void)
   for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if (p->state == RUNNING || p->state == RUNNABLE) {
       p->tickets = total_tickets / active_proc_count;
+      //(Thomas): I could not find anything in Ahmed's code that initialized stride and pass values so I decided to put it here
+       // p -> stride = total_tickets*10/(p->tickets);
+       // p -> pass =0;
     } else {
       p->tickets = 0;
     }
@@ -408,9 +411,9 @@ scheduler(void)
     }
     //if stride scheduling
     else if(schedPolicy == 1){
+      int lowestPass =0;
+      int lowestPID =0;
       sti();
-      int lowestPID = 0;
-      int lowestPass = 0;
       //search for a runnable process
       acquire(&ptable.lock);
       ran = 0;
@@ -422,10 +425,21 @@ scheduler(void)
         }
         //if p is runnable
         else{
+          ran = 1;
           //JOB: find the process with either the lowest pass or PID val and run it
           //     after running, update the pass with the formula pass += stride.
           //     Then search for the next process with the lowest PID or pass value
-          if(p-> pid == lowestPID || p-> pass == lowestPass){
+
+          //ISSUE: after the 1st time around, the program hangs.
+          //Theory: it could be that since the for loop only runs once, we run everything once, update, and then move on
+          //        without coming back around
+          //COUNTER: Round robin also uses a for loop and works fine
+          if(p-> pid <= lowestPID || p-> pass <= lowestPass){
+            // c is the cpu
+            // p should be the process
+            p -> pass = p->pass + p-> stride; // pass should be initialized when proc are initialized
+            lowestPass = p->pass;
+            lowestPID = p->pid;
             c->proc = p; //current running proc switch
             switchuvm(p); //switch running proc (context switch)
             p->state = RUNNING; //set to running
@@ -434,13 +448,16 @@ scheduler(void)
             switchkvm(); //switch proc off
 
             // Process is done running for now.
-            // It should have changed its  before coming back.
-            p -> pass += stride; // pass should be initialized when proc are initialized
+            // It should have changed its ???? before coming back.
             c->proc = 0;
             }
         }
-        PID++;
-        stride++;
+        //increment lowestPID and lowestPass to search for the process with the next lowest PID or pass
+      }
+      release(&ptable.lock);
+
+      if (ran == 0){
+          halt();
       }
     }
   }
