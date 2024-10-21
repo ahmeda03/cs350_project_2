@@ -656,3 +656,37 @@ tickets_owned(int pid) {
   release(&ptable.lock);
   return proc_tickets;
 }
+
+int transfer_tickets(int pid, int tickets)
+{
+  struct proc *callerproc = myproc();
+  struct proc *receivingproc;
+
+  if (tickets < 0)
+    return -1;
+  if (tickets > (callerproc->tickets - 1))
+    return -2;
+
+  acquire(&ptable.lock);
+  for (receivingproc = ptable.proc; receivingproc < &ptable.proc[NPROC]; receivingproc++)
+  {
+    // Found the recipient process
+    if (receivingproc->pid == pid)
+    {
+      // transfer tickets
+      receivingproc->tickets += tickets;
+      callerproc->tickets -= tickets;
+
+      // calc new stride value
+      receivingproc->stride = (100 * 10) / receivingproc->tickets;
+      callerproc->stride = (100 * 10) / callerproc->tickets;
+
+      release(&ptable.lock);
+      return callerproc->tickets;
+    }
+  }
+
+  release(&ptable.lock);
+
+  return -3;
+}

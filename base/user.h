@@ -26,6 +26,7 @@ int uptime(void);
 void fork_winner(int winner);
 void set_sched(int);
 int tickets_owned(int pid);
+int transfer_tickets(int pid, int tickets);
 
 // ulib.c
 int stat(char*, struct stat*);
