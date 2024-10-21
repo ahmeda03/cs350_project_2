@@ -149,3 +149,14 @@ int sys_tickets_owned(void)
 
   return tickets_owned(pid);
 }
+
+int sys_transfer_tickets(void)
+{
+  int pid, tickets;
+
+  argint(0, &pid);
+  argint(1, &tickets);
+
+  return transfer_tickets(pid, tickets);
+
+}
