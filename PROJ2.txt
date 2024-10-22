@@ -1,0 +1,12 @@
+Our group worked on this project by first meeting beforehand to work on the inital race condition to child-first after a fork task. We worked on this together and then divided the work based on each individual task in the assignment sheet. Throughout the project, we asked each other questions and gave updates through Discord.
+
+Jenylee
+Ahmed
+Tu
+Thomas
+
+Status:
+
+Description:
+
+Test cases that work/don't work:
