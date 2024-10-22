@@ -2,13 +2,18 @@ Our group worked on this project by first meeting beforehand to work on the init
 We worked on this together and then divided the work based on each individual task in the assignment sheet. 
 Throughout the project, we asked each other questions and gave updates through Discord.
 
-Jenylee
+Jenylee: My task was to allow the user progra mto set the type of scheduling policy where an argument of 0 meant a default policy and an argument of 1 was stride scheduling.
+I was in charge of writing the system all user space wrapper function, void set_sched(int). I added this system call to all necessary files such as "syscall.c," "syscall.h," "sysproc.c," "usys.S," and "user.h." which was similar to the first project. After initializing it, I implemented the sys_sched system call iin the syspro.c file. I start off my initializing a global
+variable called schedPolicy to keep track of the current scheduling policy with either 0 or 1. I used argint(0, &policyNum) to get the user's argument. I checked if the argument was valid
+if it wasn't I returned a -1. Afterwards, if it was 0 or 1 I printed out the current scheduling policy and returned 0 to show success. 
 Ahmed
 Tu
 Thomas
 
-Status:
+Purpose:
 
-Description:
+Functionality:
+
+Usage:
 
 Test cases that work/don't work:
