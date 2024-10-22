@@ -8,7 +8,8 @@ variable called schedPolicy to keep track of the current scheduling policy with 
 if it wasn't I returned a -1. Afterwards, if it was 0 or 1 I printed out the current scheduling policy and returned 0 to show success. 
 Ahmed
 Tu
-Thomas
+
+Thomas: My task was to implment stride scheduling policy where the CPU schedules processes based on the pass value of each process has. If there are multiple processes with the same pass value, the process with the lowest PID is selected and ran. All of the code that I was responsible for is loced in the "proc.c" file of xv6 under the "scheduler" function.
 
 Purpose:
 
