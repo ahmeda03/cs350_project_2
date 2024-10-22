@@ -15,6 +15,20 @@ Purpose:
 
 Functionality:
 
+
+
+Thomas: The scheduler function in "proc.c" works in this fashion:
+-depending on what value of schedPolicy, the CPU can either execute with round robin scheduling or stride scheduling.
+-Assuming stride scheduling has been picked by the schedPolicy, initialize lowestPID and lowestPass to INT_MAX
+-Find the process with the lowest pass and/or PID value is found by looping through the list of processes
+-If the process is runnable, update the pass value of the process by adding its stride value to pass and set the ran variable to 1 before running the process
+-Once the process returns to the scheduler, loop back up to step 3 with the process with the next lowest pass value
+-Once all processes finish, release the ptable
+
 Usage:
+
+
+
+Thomas: Stride schduler is mainly used in tests 2, 4, and 5
 
 Test cases that work/don't work:
