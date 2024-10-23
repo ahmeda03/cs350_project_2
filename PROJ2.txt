@@ -13,10 +13,6 @@ Tu: I completed the transfer_tickets function part of the stride scheduling poli
 
 Thomas: My task was to implment stride scheduling policy where the CPU schedules processes based on the pass value of each process has. If there are multiple processes with the same pass value, the process with the lowest PID is selected and ran. All of the code that I was responsible for is loced in the "proc.c" file of xv6 under the "scheduler" function.
 
-Purpose:
-
-Functionality:
-
 
 
 Thomas: The scheduler function in "proc.c" works in this fashion:
@@ -27,10 +23,7 @@ Thomas: The scheduler function in "proc.c" works in this fashion:
 -Once the process returns to the scheduler, loop back up to step 3 with the process with the next lowest pass value
 -Once all processes finish, release the ptable
 
-Usage:
-
 
 
 Thomas: Stride schduler is mainly used in tests 2, 4, and 5
 
-Test cases that work/don't work:
