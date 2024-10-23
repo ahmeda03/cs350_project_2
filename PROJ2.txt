@@ -7,7 +7,7 @@ I was in charge of writing the system all user space wrapper function, void set_
 variable called schedPolicy to keep track of the current scheduling policy with either 0 or 1. I used argint(0, &policyNum) to get the user's argument. I checked if the argument was valid
 if it wasn't I returned a -1. Afterwards, if it was 0 or 1 I printed out the current scheduling policy and returned 0 to show success. 
 
-Ahmed
+Ahmed: My task was to implment the tickets_owned system call function. This function allowed a process to obtain the number of tickets owned by a process through its PID. This function was implemented in proc.c and in all the other usual locations when creating a system call. The main way it works is by obtaining the value from the tickets variable that is located inside of all of the created proc structs. I also added the code for distributed and redistributed of the tickets to each process, where each procces's ticket value was appropriately set when a new process is created through fork or a process exits, which was an integral part of the stride scheduling policy.
 
 Tu: I completed the transfer_tickets function part of the stride scheduling policy. Transfer_tickets followed the setting up a system call procedure. It was implemented in "proc.c". The end goal it accomplishes it succesfully transferring the tickets of the calling process to a target process if it exists along with boundary checking for number of tickets being sent. 
 

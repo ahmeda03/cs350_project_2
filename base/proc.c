@@ -240,7 +240,9 @@ fork(void)
         p->tickets = (total_tickets/active_proc_count );
         p->stride = (total_tickets * 10) / p->tickets;
         p->pass = 0;
-      }
+      } else {
+        p->tickets = 0;
+      }sc
     }
     
   release(&ptable.lock);
@@ -305,6 +307,8 @@ exit(void)
   for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if (p->state == RUNNING || p->state == RUNNABLE) {
       p->tickets = (total_tickets / active_proc_count);
+      p->stride = (total_tickets * 10) / p->tickets;
+      p->pass = 0;
     } else {
       p->tickets = 0;
     }
