@@ -242,7 +242,7 @@ fork(void)
         p->pass = 0;
       } else {
         p->tickets = 0;
-      }sc
+      }
     }
     
   release(&ptable.lock);
